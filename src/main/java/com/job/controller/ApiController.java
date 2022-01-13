@@ -1,5 +1,7 @@
 package com.job.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,19 +20,20 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.job.model.Product;
 import com.job.repository.ProductRepository;
+import com.job.service.HnbService;
 
 @RestController
 @RequestMapping("/api")
 public class ApiController {
 	
 	private ProductRepository productRepo;
+	private HnbService hnbService;
 	
-	public ApiController(ProductRepository productRepo) {
+	public ApiController(ProductRepository productRepo,HnbService hnbService) {
 		super();
 		this.productRepo = productRepo;
+		this.hnbService=hnbService;
 	}
-
-
 
 	@GetMapping("/products")
 	public ResponseEntity<List<Product>> getAllTutorials(@RequestParam(required = false) String name) {
@@ -56,11 +59,14 @@ public class ApiController {
 	@PostMapping("/products")
 	public ResponseEntity<Product> createTutorial(@RequestBody Product product) {
 		try {
+			String currency = hnbService.callWebService();
+			String curryn = currency.replace("," ,".");
+			BigDecimal bigDecimal = new BigDecimal(curryn);
 			Product prod = productRepo
 					.save(Product.builder()
 							.name(product.getName())
 							.code(product.getCode())
-							.priceEur(product.getPriceEur())
+							.priceEur(product.getPriceHrk().divide(bigDecimal, 2, RoundingMode.HALF_EVEN))
 							.priceHrk(product.getPriceHrk())
 							.description(product.getDescription())
 							.isAvailable(product.isAvailable()).build());
